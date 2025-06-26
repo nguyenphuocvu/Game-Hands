@@ -48,7 +48,7 @@ const ViewRoom = () => {
   return (
     <div className="min-h-screen bg-black text-[#FFF674] pt-30 px-10">
       <img
-        src="/ysm-raise-your-hands-up.png"
+        src="/handsup-logo.png"
         alt="Logo"
         className="absolute top-1 left-4 w-40 h-40 object-contain"
       />

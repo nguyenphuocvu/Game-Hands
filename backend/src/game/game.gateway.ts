@@ -10,7 +10,13 @@ import { Socket, Server } from 'socket.io';
 import { GameService } from './game.service';
 import { JoinRoomDto } from './dto/join-room.dto';
 
-@WebSocketGateway({ cors: true })
+@WebSocketGateway({
+  cors: {
+    origin: ['http://handsup-api.ysm.today'],
+    credentials: true,
+  },
+  path: '/socket.io',
+})
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private server: Server;
   private clientRoomMap = new Map<string, { room: string; name: string }>();

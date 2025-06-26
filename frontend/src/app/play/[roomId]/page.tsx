@@ -50,17 +50,16 @@ const PlayRoom = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-[#FFF674]">
-   <p className="absolute top-1/3 text-[20px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm text-[#FFF674] font-semibold z-10">
-  Room: {roomId}
-</p>
-
+      <p className="absolute top-1/3 text-[20px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm text-[#FFF674] font-semibold z-10">
+        Room: {roomId}
+      </p>
 
       <img
-        src="/ysm-raise-your-hands-up.png"
+        src="/handsup-logo.png"
         alt="Logo"
-         className="absolute top-1 left-4 w-40 h-40 object-contain"
+        className="absolute top-1 left-4 w-40 h-40 object-contain"
       />
-       {/* <p className="text-sm text-[#FFF674] font-semibold">Room: {roomId}</p> */}
+
       <div className="p-10 border border-[#FFF674] rounded text-center space-y-6">
         <h1 className="text-2xl font-bold">{name}</h1>
         <p className="bg-green-300 text-white border border-green-300 px-2 py-1 rounded text-sm font-semibold">
