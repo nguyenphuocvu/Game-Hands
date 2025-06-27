@@ -73,9 +73,10 @@ const ViewRoom = () => {
               }`}
             >
               <div>{player}</div>
-              <div className="mt-1 text-sm bg-green-300 text-white rounded px-2 py-1 border border-green-300">
+              <div className="w-20 h-20 flex items-center justify-center rounded-full border-4 border-green-500 text-green-500 text-3xl mx-auto mt-2">
                 {score[player] ?? 0}
               </div>
+
               {/* Nhập điểm  */}
               <input
                 type="number"

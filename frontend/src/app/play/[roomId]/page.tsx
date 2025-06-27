@@ -1,23 +1,24 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import socket from "@/utils/socket";
 import { HandActionPayload, JoinRoomPayload } from "@/types/socket.types";
-import Cookies from "js-cookie";
 
 const PlayRoom = () => {
   const [name, setName] = useState<string>("");
   const { roomId } = useParams<{ roomId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const username = searchParams.get("user");
   const [winner, setWinner] = useState<string | null>(null);
   const [score, setScore] = useState<number>(0);
+
   useEffect(() => {
-    const stored = Cookies.get("username");
-    if (!stored || !roomId) return router.push("/join");
-    setName(stored);
+    if (!username || !roomId) return router.push("/join");
+    setName(username);
     socket.connect();
 
-    const payload: JoinRoomPayload = { name: stored, room: roomId };
+    const payload: JoinRoomPayload = { name: username, room: roomId };
     socket.emit("joinRoom", payload);
     //Winner
     socket.on("winner", (playerName: string) => {
@@ -29,11 +30,10 @@ const PlayRoom = () => {
     });
     //Score
     socket.on("scoreUpdate", ({ name: updatedName, score }) => {
-      if (updatedName === stored) {
+      if (updatedName === username) {
         setScore(score);
       }
     });
-    
 
     return () => {
       socket.off("winner");
@@ -41,9 +41,7 @@ const PlayRoom = () => {
       socket.off("scoreUpdate");
       socket.disconnect();
     };
-    
-
-  }, [roomId, router]);
+  }, [roomId, router, username]);
 
   const handleHands = (): void => {
     if (!roomId) return;
@@ -70,7 +68,7 @@ const PlayRoom = () => {
         <h1 className="text-2xl  font-bold ">{name}</h1>
         <div
           className="w-20 h-20 flex items-center justify-center rounded-full border-4 border-green-500
-     text-green-500 text-3xl mx-auto"
+        *:  text-green-500 text-3xl mx-auto"
         >
           {score}
         </div>
