@@ -20,36 +20,30 @@ import { JoinRoomDto } from './dto/join-room.dto';
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private server: Server;
   private clientRoomMap = new Map<string, { room: string; name: string }>();
+
   constructor(private readonly gameService: GameService) {}
 
   afterInit(server: Server) {
     this.server = server;
   }
 
-  //Connect
   handleConnection(client: Socket) {
     console.log('Client connected:', client.id);
   }
-  //Disconnected
+
   handleDisconnect(client: Socket) {
     const info = this.clientRoomMap.get(client.id);
     if (!info) return;
-
-    const { room, name } = info;
-    this.gameService.leaveRoom(room, name);
-
-    const players = this.gameService.getPlayers(room);
-    this.server.to(room).emit('playerList', players);
-
     this.clientRoomMap.delete(client.id);
   }
-  //Play
+
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @MessageBody() data: JoinRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
     const { name, room } = data;
+
     client.join(room);
     await this.gameService.joinRoom(room, name);
 
@@ -79,13 +73,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const isWinner = await this.gameService.setWinner(room, name);
     if (isWinner) {
       this.server.to(room).emit('winner', name);
-
       const score = await this.gameService.getScore(room, name);
       this.server.to(room).emit('scoreUpdate', { name, score });
     }
   }
-
-  //ViewRoom
 
   @SubscribeMessage('adminJoinRoom')
   async handleAdminJoinRoom(
@@ -106,28 +97,28 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('scoreUpdate', { name: player, score });
     }
   }
-  //Reset Game
+
   @SubscribeMessage('resetGame')
   async handleResetGame(@MessageBody() data: { room: string }) {
     const { room } = data;
     await this.gameService.resetGame(room);
     this.server.to(room).emit('winner', null);
+
     const players = await this.gameService.getPlayers(room);
     for (const name of players) {
       this.server.to(room).emit('scoreUpdate', { name, score: 0 });
     }
   }
+
   @SubscribeMessage('setScore')
   async handleSetScore(
     @MessageBody() data: { room: string; name: string; score: number },
   ) {
     const { room, name, score } = data;
     await this.gameService.setScore(room, name, score);
-    this.server.to(room).emit('scoreUpdate', {
-      name,
-      score,
-    });
+    this.server.to(room).emit('scoreUpdate', { name, score });
   }
+
   @SubscribeMessage('resetScore')
   async handleResetScore(@MessageBody() data: { room: string }) {
     const { room } = data;
