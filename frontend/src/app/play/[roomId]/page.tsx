@@ -33,10 +33,16 @@ const PlayRoom = () => {
         setScore(score);
       }
     });
+    
 
     return () => {
+      socket.off("winner");
+      socket.off("resetGame");
       socket.off("scoreUpdate");
+      socket.disconnect();
     };
+    
+
   }, [roomId, router]);
 
   const handleHands = (): void => {
@@ -62,8 +68,10 @@ const PlayRoom = () => {
 
       <div className="p-10 border border-[#FFF674] rounded text-center space-y-6">
         <h1 className="text-2xl  font-bold ">{name}</h1>
-        <div className="w-20 h-20 flex items-center justify-center rounded-full border-4 border-green-500
-     text-green-500 text-3xl mx-auto">
+        <div
+          className="w-20 h-20 flex items-center justify-center rounded-full border-4 border-green-500
+     text-green-500 text-3xl mx-auto"
+        >
           {score}
         </div>
 

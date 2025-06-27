@@ -52,13 +52,33 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { name, room } = data;
     client.join(room);
     await this.gameService.joinRoom(room, name);
-    const players = await this.gameService.getPlayers(room);
 
+    const players = await this.gameService.getPlayers(room);
     client.emit('playerList', players);
     client.broadcast.to(room).emit('playerList', players);
 
+    const score = await this.gameService.getScore(room, name);
+    client.emit('scoreUpdate', { name, score });
+
     this.clientRoomMap.set(client.id, { room, name });
+
+    const winner = await this.gameService.getWinner(room);
+    if (winner) client.emit('winner', winner);
   }
+
+  @SubscribeMessage('hands')
+  async handleHands(@MessageBody() data: { room: string; name: string }) {
+    const { room, name } = data;
+
+    const isWinner = await this.gameService.setWinner(room, name);
+    if (isWinner) {
+      this.server.to(room).emit('winner', name);
+
+      const score = await this.gameService.getScore(room, name);
+      this.server.to(room).emit('scoreUpdate', { name, score });
+    }
+  }
+
   //ViewRoom
 
   @SubscribeMessage('adminJoinRoom')

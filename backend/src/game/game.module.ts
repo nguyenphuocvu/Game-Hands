@@ -6,10 +6,8 @@ import * as redisStore from 'cache-manager-ioredis';
 @Module({
   imports: [
     CacheModule.register({
-      store: redisStore as any,
-      host: 'localhost',
-      port: 6379,
-      ttl: 60 * 60 * 24, // cache trong 24 giờ
+      store: redisStore,
+      url: 'redis://localhost:6379',
     }),
   ],
   providers: [GameGateway, GameService],
