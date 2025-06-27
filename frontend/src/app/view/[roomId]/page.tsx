@@ -66,9 +66,9 @@ const ViewRoom = () => {
           players.map((player) => (
             <div
               key={player}
-              className={`w-full p-4 border rounded text-center font-bold text-lg ${
+              className={`w-full p-4 border rounded text-center font-bold text-lg border-4  ${
                 winner === player
-                  ? "bg-green-500 text-white"
+                  ?  "border-green-500 text-white"
                   : "border-[#FFF674]"
               }`}
             >
@@ -90,13 +90,10 @@ const ViewRoom = () => {
                   const value = Number(inputScores[player]);
                   if (isNaN(value)) return;
 
-                  const current = score[player] ?? 0;
-                  const newScore = current + value;
-
                   socket.emit("setScore", {
                     room: roomId,
                     name: player,
-                    score: newScore,
+                    score: value,
                   });
 
                   setInputScores((prev) => ({ ...prev, [player]: "" }));

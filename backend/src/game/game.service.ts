@@ -34,15 +34,9 @@ export class GameService {
     return (await this.cacheManager.get<string>(`winner:${room}`)) || null;
   }
   //Reset Game
+
   async resetGame(room: string) {
     await this.cacheManager.set(`winner:${room}`, null);
-    const scores =
-      (await this.cacheManager.get<Record<string, number>>(`score:${room}`)) ||
-      {};
-    Object.keys(scores).forEach((name) => {
-      scores[name] = 0;
-    });
-    await this.cacheManager.set(`score:${room}`, scores);
   }
 
   //Score
