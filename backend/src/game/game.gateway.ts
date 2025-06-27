@@ -101,12 +101,15 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('resetGame')
   async handleResetGame(@MessageBody() data: { room: string }) {
     const { room } = data;
+
     await this.gameService.resetGame(room);
+
     this.server.to(room).emit('winner', null);
 
     const players = await this.gameService.getPlayers(room);
     for (const name of players) {
-      this.server.to(room).emit('scoreUpdate', { name, score: 0 });
+      const score = await this.gameService.getScore(room, name);
+      this.server.to(room).emit('scoreUpdate', { name, score });
     }
   }
 
