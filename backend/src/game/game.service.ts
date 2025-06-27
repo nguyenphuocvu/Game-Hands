@@ -6,10 +6,6 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 export class GameService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
-  // private getKey(room: string, type: 'players' | 'scores' | 'winner') {
-  //   return `room:${room}:${type}`;
-  // }
-
   async joinRoom(room: string, name: string) {
     const players =
       (await this.cacheManager.get<string[]>(`room:${room}`)) || [];
@@ -77,13 +73,6 @@ export class GameService {
     );
     await this.cacheManager.set(`score:${room}`, scores);
   }
-
-  // ensureRoom(room: string) {
-  //   if (!this.rooms[room]) this.rooms[room] = [];
-  //   if (!this.winners[room]) this.winners[room] = null;
-  //   if (!this.scores[room]) this.scores[room] = {};
-  // }
-
   async leaveRoom(room: string, name: string) {
     const players =
       (await this.cacheManager.get<string[]>(`room:${room}`)) || [];
