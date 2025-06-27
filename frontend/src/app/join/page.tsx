@@ -11,7 +11,7 @@ const JoinPage = () => {
   const handlePlay = (): void => {
     if (!name || !room) return alert("Vui lòng nhập tên và room");
     Cookies.set("username", name, { expires: 1 });
-    router.push(`/play/${room}`);
+    router.push(`/play/${room}?user=${encodeURIComponent(name)}`);
   };
 
   const goToView = (): void => {
