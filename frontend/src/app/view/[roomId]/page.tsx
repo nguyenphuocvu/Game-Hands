@@ -18,8 +18,12 @@ const ViewRoom = () => {
     socket.connect();
     socket.emit("adminJoinRoom", payload);
 
-    socket.on("playerList", (list: string[]) => {
-      setPlayers(list);
+    socket.on("playerList", (list) => {
+      if (Array.isArray(list)) {
+        setPlayers(list);
+      } else {
+        setPlayers([]);
+      }
     });
 
     socket.on("winner", (playerName: string) => {
@@ -58,45 +62,48 @@ const ViewRoom = () => {
       <h1 className="text-2xl font-bold mb-5">Room : {roomId} </h1>
 
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-5">
-        {players.map((player) => (
-          <div
-            key={player}
-            className={`w-full p-4 border rounded text-center font-bold text-lg ${
-              winner === player ? "bg-green-500 text-white" : "border-[#FFF674]"
-            }`}
-          >
-            <div>{player}</div>
-            <div className="mt-1 text-sm bg-green-300 text-white rounded px-2 py-1 border border-green-300">
-              {score[player] ?? 0}
+        {Array.isArray(players) &&
+          players.map((player) => (
+            <div
+              key={player}
+              className={`w-full p-4 border rounded text-center font-bold text-lg ${
+                winner === player
+                  ? "bg-green-500 text-white"
+                  : "border-[#FFF674]"
+              }`}
+            >
+              <div>{player}</div>
+              <div className="mt-1 text-sm bg-green-300 text-white rounded px-2 py-1 border border-green-300">
+                {score[player] ?? 0}
+              </div>
+              {/* Nhập điểm  */}
+              <input
+                type="number"
+                placeholder="Nhập điểm"
+                value={inputScores[player] ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setInputScores((prev) => ({ ...prev, [player]: value }));
+                }}
+                onBlur={() => {
+                  const value = Number(inputScores[player]);
+                  if (isNaN(value)) return;
+
+                  const current = score[player] ?? 0;
+                  const newScore = current + value;
+
+                  socket.emit("setScore", {
+                    room: roomId,
+                    name: player,
+                    score: newScore,
+                  });
+
+                  setInputScores((prev) => ({ ...prev, [player]: "" }));
+                }}
+                className="w-full mt-2 p-1 text-sm rounded text-white bg-transparent border border-[#FFF674] outline-none"
+              />
             </div>
-            {/* Nhập điểm  */}
-            <input
-              type="number"
-              placeholder="Nhập điểm"
-              value={inputScores[player] ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setInputScores((prev) => ({ ...prev, [player]: value }));
-              }}
-              onBlur={() => {
-                const value = Number(inputScores[player]);
-                if (isNaN(value)) return;
-
-                const current = score[player] ?? 0;
-                const newScore = current + value;
-
-                socket.emit("setScore", {
-                  room: roomId,
-                  name: player,
-                  score: newScore,
-                });
-
-                setInputScores((prev) => ({ ...prev, [player]: "" }));
-              }}
-              className="w-full mt-2 p-1 text-sm rounded text-white bg-transparent border border-[#FFF674] outline-none"
-            />
-          </div>
-        ))}
+          ))}
 
         {players.length === 0 && (
           <p className="text-center text-gray-400 col-span-full">
