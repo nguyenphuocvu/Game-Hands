@@ -57,8 +57,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('playerList', players);
     client.broadcast.to(room).emit('playerList', players);
 
-    const score = await this.gameService.getScore(room, name);
-    client.emit('scoreUpdate', { name, score });
+    for (const player of players) {
+      const playerScore = await this.gameService.getScore(room, player);
+      client.emit('scoreUpdate', { name: player, score: playerScore });
+
+      if (player === name) {
+        console.log(`[joinRoom] ${name} -> score: ${playerScore}`);
+      }
+    }
 
     this.clientRoomMap.set(client.id, { room, name });
 
