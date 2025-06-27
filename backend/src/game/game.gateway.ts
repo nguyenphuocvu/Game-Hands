@@ -12,7 +12,7 @@ import { JoinRoomDto } from './dto/join-room.dto';
 
 @WebSocketGateway({
   cors: {
-    origin: ['http://handsup-api.ysm.today'],
+    origin: ['https://handsup.ysm.today'],
     credentials: true,
   },
   path: '/socket.io',
@@ -45,72 +45,70 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   //Play
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(
+  async handleJoinRoom(
     @MessageBody() data: JoinRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
     const { name, room } = data;
     client.join(room);
-    this.gameService.ensureRoom(room);
-    this.gameService.joinRoom(room, name);
-
-    const players = this.gameService.getPlayers(room);
+    await this.gameService.joinRoom(room, name);
+    const players = await this.gameService.getPlayers(room);
 
     client.emit('playerList', players);
     client.broadcast.to(room).emit('playerList', players);
+
+    this.clientRoomMap.set(client.id, { room, name });
   }
   //ViewRoom
+
   @SubscribeMessage('adminJoinRoom')
-  handleAdminJoinRoom(
+  async handleAdminJoinRoom(
     @MessageBody() data: JoinRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
     const { room } = data;
     client.join(room);
-    this.gameService.ensureRoom(room);
-    client.emit('playerList', this.gameService.getPlayers(room));
 
-    const winner = this.gameService.getWinner(room);
+    const players = await this.gameService.getPlayers(room);
+    client.emit('playerList', players);
+
+    const winner = await this.gameService.getWinner(room);
     if (winner) client.emit('winner', winner);
-  }
-  //Hands Play
-  @SubscribeMessage('hands')
-  handleHands(
-    @MessageBody() data: JoinRoomDto,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const { room, name } = data;
-    const success = this.gameService.setWinner(room, name);
-    if (success) {
-      client.broadcast.to(room).emit('winner', name);
-      client.emit('winner', name);
+
+    for (const player of players) {
+      const score = await this.gameService.getScore(room, player);
+      client.emit('scoreUpdate', { name: player, score });
     }
   }
   //Reset Game
   @SubscribeMessage('resetGame')
-  handleResetGame(@MessageBody() data: { room: string }) {
+  async handleResetGame(@MessageBody() data: { room: string }) {
     const { room } = data;
-    this.gameService.resetGame(room);
+    await this.gameService.resetGame(room);
     this.server.to(room).emit('winner', null);
+    const players = await this.gameService.getPlayers(room);
+    for (const name of players) {
+      this.server.to(room).emit('scoreUpdate', { name, score: 0 });
+    }
   }
   @SubscribeMessage('setScore')
-  handleSetScore(
+  async handleSetScore(
     @MessageBody() data: { room: string; name: string; score: number },
   ) {
     const { room, name, score } = data;
-    this.gameService.setScore(room, name, score);
+    await this.gameService.setScore(room, name, score);
     this.server.to(room).emit('scoreUpdate', {
       name,
       score,
     });
   }
   @SubscribeMessage('resetScore')
-  handleResetScore(@MessageBody() data: { room: string }) {
+  async handleResetScore(@MessageBody() data: { room: string }) {
     const { room } = data;
-    this.gameService.resetScore(room);
-    const players = this.gameService.getPlayers(room);
-    players.forEach((name) => {
+    await this.gameService.resetScore(room);
+    const players = await this.gameService.getPlayers(room);
+    for (const name of players) {
       this.server.to(room).emit('scoreUpdate', { name, score: 0 });
-    });
+    }
   }
 }

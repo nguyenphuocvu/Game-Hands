@@ -1,72 +1,104 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class GameService {
-  private rooms: Record<string, string[]> = {};
-  private winners: Record<string, string | null> = {};
-  private scores: Record<string, Record<string, number>> = {};
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
-  joinRoom(room: string, name: string) {
-    if (!this.rooms[room]) this.rooms[room] = [];
-    if (!this.rooms[room].includes(name)) this.rooms[room].push(name);
-    if (!this.scores[room]) this.scores[room] = {};
-    if (this.scores[room][name] === undefined) this.scores[room][name] = 0;
+  // private getKey(room: string, type: 'players' | 'scores' | 'winner') {
+  //   return `room:${room}:${type}`;
+  // }
+
+  async joinRoom(room: string, name: string) {
+    const players =
+      (await this.cacheManager.get<string[]>(`room:${room}`)) || [];
+    if (!players.includes(name)) players.push(name);
+    await this.cacheManager.set(`room:${room}`, players);
+
+    const scores =
+      (await this.cacheManager.get<Record<string, number>>(`score:${room}`)) ||
+      {};
+    if (scores[name] === undefined) scores[name] = 0;
+    await this.cacheManager.set(`score:${room}`, scores);
   }
 
-  getPlayers(room: string): string[] {
-    return this.rooms[room] || [];
+  async getPlayers(room: string): Promise<string[]> {
+    return (await this.cacheManager.get<string[]>(`room:${room}`)) || [];
   }
-
-  setWinner(room: string, name: string): boolean {
-    if (this.winners[room]) return false;
-    this.winners[room] = name;
+  //Winner
+  async setWinner(room: string, name: string): Promise<boolean> {
+    const winner = await this.cacheManager.get<string>(`winner:${room}`);
+    if (winner) return false;
+    await this.cacheManager.set(`winner:${room}`, name);
     return true;
   }
 
-  getWinner(room: string): string | null {
-    return this.winners[room] || null;
+  async getWinner(room: string): Promise<string | null> {
+    return (await this.cacheManager.get<string>(`winner:${room}`)) || null;
   }
-
-  resetGame(room: string) {
-    this.winners[room] = null;
-    if (this.scores[room]) {
-      Object.keys(this.scores[room]).forEach((name) => {
-        this.scores[room][name] = 0;
-      });
-    }
-  }
-
-  resetScore(room: string) {
-    if (!this.rooms[room]) return;
-    const players = this.rooms[room];
-    players.forEach((player) => {
-      this.scores[room][player] = 0;
+  //Reset Game
+  async resetGame(room: string) {
+    await this.cacheManager.set(`winner:${room}`, null);
+    const scores =
+      (await this.cacheManager.get<Record<string, number>>(`score:${room}`)) ||
+      {};
+    Object.keys(scores).forEach((name) => {
+      scores[name] = 0;
     });
+    await this.cacheManager.set(`score:${room}`, scores);
   }
 
-  ensureRoom(room: string) {
-    if (!this.rooms[room]) this.rooms[room] = [];
-    if (!this.winners[room]) this.winners[room] = null;
-    if (!this.scores[room]) this.scores[room] = {};
+  //Score
+  async setScore(room: string, name: string, score: number) {
+    console.log(`SET SCORE: room=${room}, name=${name}, score=${score}`);
+    const scores =
+      (await this.cacheManager.get<Record<string, number>>(`score:${room}`)) ||
+      {};
+    scores[name] = score;
+    await this.cacheManager.set(`score:${room}`, scores);
   }
 
-  setScore(room: string, name: string, score: number) {
-    if (!this.scores[room]) this.scores[room] = {};
-    this.scores[room][name] = score;
+  async getScore(room: string, name: string): Promise<number> {
+    const scores =
+      (await this.cacheManager.get<Record<string, number>>(`score:${room}`)) ||
+      {};
+    return scores[name] ?? 0;
   }
-  getScore(room: string, name: string): number {
-    return this.scores[room]?.[name] || 0;
+
+  async resetScore(room: string) {
+    const players = await this.getPlayers(room);
+    const scores = players.reduce(
+      (acc, player) => {
+        acc[player] = 0;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    await this.cacheManager.set(`score:${room}`, scores);
   }
-  leaveRoom(room: string, name: string) {
-    if (!this.rooms[room]) return;
-    this.rooms[room] = this.rooms[room].filter((player) => player !== name);
 
-    if (this.scores[room]) {
-      delete this.scores[room][name];
-    }
+  // ensureRoom(room: string) {
+  //   if (!this.rooms[room]) this.rooms[room] = [];
+  //   if (!this.winners[room]) this.winners[room] = null;
+  //   if (!this.scores[room]) this.scores[room] = {};
+  // }
 
-    if (this.winners[room] === name) {
-      this.winners[room] = null;
+  async leaveRoom(room: string, name: string) {
+    const players =
+      (await this.cacheManager.get<string[]>(`room:${room}`)) || [];
+    const updated = players.filter((player) => player !== name);
+    await this.cacheManager.set(`room:${room}`, updated);
+
+    const scores =
+      (await this.cacheManager.get<Record<string, number>>(`score:${room}`)) ||
+      {};
+    delete scores[name];
+    await this.cacheManager.set(`score:${room}`, scores);
+
+    const winner = await this.cacheManager.get<string>(`winner:${room}`);
+    if (winner === name) {
+      await this.cacheManager.set(`winner:${room}`, null);
     }
   }
 }

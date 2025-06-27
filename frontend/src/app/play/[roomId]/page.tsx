@@ -50,7 +50,7 @@ const PlayRoom = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-[#FFF674]">
-      <p className="absolute top-1/3 text-[20px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm text-[#FFF674] font-semibold z-10">
+      <p className="absolute top-1/4 text-[20px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm text-[#FFF674] font-semibold z-10">
         Room: {roomId}
       </p>
 
@@ -61,10 +61,11 @@ const PlayRoom = () => {
       />
 
       <div className="p-10 border border-[#FFF674] rounded text-center space-y-6">
-        <h1 className="text-2xl font-bold">{name}</h1>
-        <p className="bg-green-300 text-white border border-green-300 px-2 py-1 rounded text-sm font-semibold">
+        <h1 className="text-2xl  font-bold ">{name}</h1>
+        <div className="w-20 h-20 flex items-center justify-center rounded-full border-4 border-green-500
+     text-green-500 text-3xl mx-auto">
           {score}
-        </p>
+        </div>
 
         <button
           onClick={handleHands}
